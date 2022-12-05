@@ -105,7 +105,7 @@ for(i in 1:nrow(titanic)) {
 titanic = filter(titanic, Embarked == "Southampton" | Embarked == "Queenstown" | Embarked == "Cherbourg")
 
 #Now filtering age - continuing to clean
-titanic_new = filter(titanic, Age != '', Survived != '',)
+titanic_new = filters
 
 #sub-setting data to include only variables I want
 titanic_new = select(titanic_new, Survived, Pclass, Sex, Age, Relatives, Fare, Embarked, AgeCategory, logFare)
@@ -128,8 +128,9 @@ mytribble = tribble(
   "Embarked",   "categorical", "Port of Embarkation (C = Cherbourg, Q = Queenstown, S = Southampton)", "No missing values",
   )
 
-kable_material(kable(mytribble, caption = "Primary Variables of Interest"), c("striped", "hover"))
-
+mytribble %>%
+  kbl() %>%
+  kable_styling()
 
 ```
 
@@ -144,7 +145,9 @@ mytribble2 = tribble(
   "AgeCategory",   "categorical", "Age classification of passenger (1 = infant, 2 = child, 3 = teen, 4 = adult, 5 = senior)", "There were missing values because there were missing values in Age, but these were removed", "Derived by using a for loop, function, and if statement to run through each passenger's age and add a classification: infant if less than 1 year of age (category 1), child if greater than or equal to 1 year and less than or equal to 12 (category 2), teen if 13 or older and less than 18 (category 3), adult if 18 or older and less than 65 (category 4), senior if 65 or older (category 5)",
   )
 
-kable_material(kable(mytribble2, caption = "Three New Variables"), c("striped", "hover"), full_width = F, position="left")
+mytribble2 %>%
+  kbl() %>%
+  kable_styling()
 
 ```
 
