@@ -1,0 +1,344 @@
+---
+title: "Project2"
+author: "Chloe Beaudreau"
+date: "2022-11-12"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(kableExtra)
+library(prettydoc)
+
+```
+
+```{r, echo=FALSE}
+#converting to tibble so it's easier for me to manipulate
+titanic = as_tibble(read.csv("titanic.csv"))
+
+```
+
+### Data Obtainment
+
+For this project, I used a Titanic dataset that contains data about the passengers on the Titanic, such as gender and class, as well as their survival status. To obtain the data, I went to Kaggle and read the dataset description & overview before downloading the "train" csv file. To read in my data, I simply used the command read.csv, but I also converted it into a tibble  to make it easier to work with. 
+
+### Handling NA Values
+
+When it came to processing my data, I checked for NA values and removed the few rows that contained missing values for age and port of embarkation using the filter function in tidyverse. 
+
+### Data Processing
+
+After I had created my three new variables and removed missing values, I made a subset of my data called "titanic_new" where I selected only the variables I was interested in working with for the project. 
+
+Later on when making my graphs, a challenge I faced was using categorical variables that were encoded with numeric values. This made it more difficult for me since I would have to manually enter in the new x axis labels I wanted. To address this problem, I went back to processing my data and used "mutate," "case_when," and "recode_factor" to rename values in the Survived, Pclass, and Embarked variables to make them more descriptive. For example, now rather than 0s and 1s, I had "yes" or "no" as the values for the Survived variable, which made my graph more descriptive without me having to manually change the labels. 
+### Purpose
+I picked the Titanic data set because I've always been interested in the Titanic shipwreck. Whenever I watched the movie, I would wonder how they chose which people would get a lifeboat. Which factors were most important? Would I have survived? When I found this data set on Kaggle, it immediately peaked my interest. 
+
+In this project, I am investigating a variety of features about passengers on the Titanic, such as the overall distribution of age, ticket class, and fare paid, in order to gain a deeper understanding of the overall passenger population. I am also investigating survival based on these features to learn about which factors seem to be associated with survival.  
+
+```{r, echo=FALSE}
+
+#Renaming values in variables to make them categorical
+titanic = mutate(titanic, Survived = case_when(Survived == 1 ~ 'Yes', Survived == 0 ~ 'No'))
+titanic = mutate(titanic, Pclass = case_when(Pclass == 1 ~ '1st Class', Pclass == 2 ~ '2nd Class', Pclass == 3 ~ '3rd Class'))
+titanic$Embarked = recode_factor(titanic$Embarked, Q = "Queenstown", S = "Southampton", C = "Cherbourg")
+
+```
+
+### For Loop & If Statement
+
+In order to create a new variable named "AgeCategory," I used a for loop to run through the age of every passenger and assign a classification by running the get_age_category function. 
+
+I embedded if and else if statements within this get_age_category function to assign a category based on the range the age fell into. For example, if age was less than 1, the classification assigned would be "1," which I later re coded to be "infant." I created ranges and corresponding categories for child, teen, adult, and seniors as well. 
+
+```{r, echo=FALSE}
+
+#Making a new variable called fareScoreSquared
+titanic['logFare'] = log10(pmax(10, 10 + titanic$Fare))
+
+#Making a new variable to show total relatives (referring to siblings, spouses, grandchildren, parents, or grandparents) aboard the Titanic
+titanic['Relatives'] = titanic$SibSp + titanic$Parch
+
+#Making a new variable to classify age using a for loop & an if statement
+
+get_age_category = function(age) {
+  category = 0
+  if (!is.na(age)) {
+    #infant
+    if (age < 1) {
+      category = 1
+    }
+    #child
+    else if ((age >= 1) && (age <= 12)) {
+      category = 2
+    }
+    #teen
+    else if ((age >= 13) && (age < 18)) {
+      category = 3
+    }
+    #adult
+    else if ((age >= 18) && (age < 65)) {
+      category = 4
+    }
+    #senior
+    else if (age >= 65) {
+      category = 5
+    }
+  }
+  return(category)
+}
+
+for(i in 1:nrow(titanic)) {
+  titanic[i, 'AgeCategory'] = get_age_category(titanic[i, 'Age'])
+  
+}
+```
+
+```{r, echo=FALSE}
+
+#Removing rows that don't have something listed for embarked
+titanic = filter(titanic, Embarked == "Southampton" | Embarked == "Queenstown" | Embarked == "Cherbourg")
+
+#Now filtering age - continuing to clean
+titanic_new = filter(titanic, Age != '', Survived != '',)
+
+#sub-setting data to include only variables I want
+titanic_new = select(titanic_new, Survived, Pclass, Sex, Age, Relatives, Fare, Embarked, AgeCategory, logFare)
+
+```
+
+### Primary Variables of Interest
+
+```{r, echo=FALSE, out.width="50%"}
+
+mytribble = tribble(
+  ~Variable, ~Type, ~Content, ~Missing_Values,
+  "Survived",   "categorical", "Whether or not the passenger survived", "No missing values",
+  "Pclass",   "categorical", "Ticket class (with 1 being 1st class, 2 being 2nd class, and 3 being 3rd class)", "No missing values",
+  "Sex",   "categorical", "Male or female passenger", "No missing values",
+  "Age",   "continuous", "Age of passenger", "There were some missing values, which have been removed",
+  "SibSp",   "categorical (can also be considered discrete numeric)", "Number of siblings/spouses aboard the Titanic also", "No missing values",
+  "Parch",   "categorical (can also be considered discrete numeric)", "Number of parents/children aborad the Titanic also", "No missing values",
+  "Fare",   "numeric", "Whether or not the passenger survived", "No missing values",
+  "Embarked",   "categorical", "Port of Embarkation (C = Cherbourg, Q = Queenstown, S = Southampton)", "No missing values",
+  )
+
+kable_material(kable(mytribble, caption = "Primary Variables of Interest"), c("striped", "hover"))
+
+
+```
+
+### Three New Variables 
+
+```{r, echo=FALSE, out.width="70%"}
+
+mytribble2 = tribble(
+  ~Variable, ~Type, ~Content, ~Missing_values, ~Derivation,
+  "logFare",   "continuous", "A variable that contains the fare variable scaled to a log scale", "No missing values", "Log was used in order to scale the values of the fare price variable since there were some large outliers that skewed the way the graph looked. 10 was added to all values to prevent there from being any extremely small values.",
+  "Relatives",   "discrete numeric (could also be categorical technically)", "The number of total direct relatives including siblings, spouses, parents, and children each passenger had aboard the Titanic", "No missing values", "Derived by adding the SibSp variable value with the Parch variable value for each passenger",
+  "AgeCategory",   "categorical", "Age classification of passenger (1 = infant, 2 = child, 3 = teen, 4 = adult, 5 = senior)", "There were missing values because there were missing values in Age, but these were removed", "Derived by using a for loop, function, and if statement to run through each passenger's age and add a classification: infant if less than 1 year of age (category 1), child if greater than or equal to 1 year and less than or equal to 12 (category 2), teen if 13 or older and less than 18 (category 3), adult if 18 or older and less than 65 (category 4), senior if 65 or older (category 5)",
+  )
+
+kable_material(kable(mytribble2, caption = "Three New Variables"), c("striped", "hover"), full_width = F, position="left")
+
+```
+
+### Two Functions Used
+
+I created a function to generate univariate barplots for the following variables: sex, ticket class, port of embarkation, relatives. I included arguments such as the variable, the fill color, the x and y axes, as well as the title. 
+
+I also created a function to generate bivariate graphs (grouped barplots) for the following variables: sex, ticket class, and age category, all of which I grouped based on survival. The arguments I included were the same as they were for the first function. 
+
+Overall, using functions helped me speed up the process of creating graphs since rather than writing code for the entire ggplot, I could instead just type the function and add the few features I wanted to change as arguments.
+
+### Five Univariate Plots
+
+```{r, echo=FALSE, out.width="570%"}
+
+#making a function to generate univariate barplots with arguments being the variable, fill color, axis labels, and title
+uni_barplot <- function(myvar, fill.color, xaxis, yaxis, mytitle){
+  myplot = ggplot(titanic_new, aes(myvar)) + geom_bar(fill = fill.color, 
+    color="white") + labs(x = xaxis, y = yaxis, title = mytitle)+
+    theme_minimal()
+  return(myplot)
+}
+
+```
+
+```{r, echo=FALSE, out.width="70%"}
+
+uni_barplot(myvar=titanic_new$Pclass, fill.color = "#2E5984", xaxis = "Ticket Class", yaxis = "Number of Passengers", mytitle = "Distribution of Ticket Class Amongst Titanic Passsengers")+ 
+labs(caption = "1 = 1st Class, 2 = 2nd Class, 3 = 3rd Class")
+
+mytab = table(titanic_new$Pclass)
+
+my_tab_prob = prop.table(mytab)
+
+```
+
+This plot shows that the number of passengers in first class is `r mytab[c(1)]` (`r 100*round(my_tab_prob[c(1)], 4)`% of total), the number of passengers in second class is `r mytab[c(2)]` (`r 100*round(my_tab_prob[c(2)], 4)`% of total), and the number of passengers in third class is `r mytab[c(3)]` (`r 100*round(my_tab_prob[c(3)], 4)`% of total). 
+
+This plot shows that the most common ticket class for a passenger to have had was 3rd class, with  1st class being the second most common. 
+
+```{r, echo=FALSE, out.width="70%"}
+
+uni_barplot(myvar=titanic_new$Sex, fill.color = "#528AAE", xaxis = "Sex of Passenger", yaxis = "Number of Passengers", mytitle = "Distribution of Male and Female Passengers Aboard the Titanic")
+
+mytab2 = table(titanic_new$Sex)
+
+my_tab_prob2 = prop.table(mytab2)
+
+```
+
+This plot shows that the number of passengers who were female was `r mytab2[c(1)]` (`r 100*round(my_tab_prob2[c(1)], 4)`% of total) and that the number of passengers who were male was `r mytab2[c(2)]` (`r 100*round(my_tab_prob2[c(2)], 4)`% of total). 
+
+This plot shows that there were significantly more males aboard the Titanic (almost twice as many males compared to females).
+
+```{r, echo=FALSE, out.width="70%"}
+
+uni_barplot(myvar=titanic_new$Embarked, fill.color = "#73A5C6", xaxis = "Port of Embarkation", yaxis = "Number of Passengers", mytitle = "Distribution of Port of Embarkation for Titanic Passengers")
+
+mytab3 = table(titanic_new$Embarked)
+
+my_tab_prob3 = prop.table(mytab3)
+
+```
+
+This plot shows that the number of passengers who embarked from Queenstown was `r mytab3[c(1)]` (`r 100*round(my_tab_prob3[c(1)], 4)`% of total), the number of passengers who embarked from Southhamptom was `r mytab3[c(2)]` (`r 100*round(my_tab_prob3[c(2)], 4)`% of total), and that the number of passengers who embarked from Cherbourg was `r mytab3[c(3)]` (`r 100*round(my_tab_prob3[c(3)], 4)`% of total). 
+
+This plot shows that Southhamptom was the most popular port of embarkation for Titanic passengers, with Cherbourg following in second. This implies that the majority of passengers were coming from London. It makes sense that Queenstown was the least popular since it's in New Zealand. 
+
+```{r, echo=FALSE, out.width="70%"}
+
+uni_barplot(myvar=titanic_new$Relatives, fill.color = "#91BAD6", xaxis = "Number of Relatives", yaxis = "", mytitle = "Distribution of the Number of Relatives Also Aboard Amongst Titanic Passengers")+ 
+labs(caption = "**Relatives refers to the total number of siblings, spouses, parents, and children a passenger had aboard")
+
+mytab4 = table(titanic_new$Relatives)
+
+my_tab_prob4 = prop.table(mytab4)
+
+```
+
+This plot shows that the number of passengers with 1 relative was `r mytab4[c(1)]` (`r 100*round(my_tab_prob4[c(1)], 4)`%), the number of passengers with 2 relatives was `r mytab4[c(2)]` (`r 100*round(my_tab_prob4[c(2)], 4)`%), the number of passengers with 3 relatives was `r mytab4[c(3)]` (`r 100*round(my_tab_prob4[c(3)], 4)`%), and so forth. 
+
+This graph implies that it was most common for passengers to be traveling with no other relatives aboard (no siblings, parents, children, or spouse). It was the second most common for passengers to have 1 or 2 relatives also aboard, and very uncommon for them to have more than that. 
+
+```{r, echo=FALSE, out.width="70%"}
+
+#Single histogram for age
+ggplot(titanic_new, aes(x=Age))+
+        geom_histogram(binwidth=2, color = "white", fill="#BCD2E8")+
+        ggtitle("Distribution of the Age of Titanic Passengers")+
+        xlab("Age of Passenger") +
+        theme_minimal()
+
+mytab5 = summary(titanic_new$Age)
+
+```
+
+This plot shows that the average age of Titanic passengers was around 30 with the minimum being less than 1 (so an infant) and the max being 80. 
+
+This graph implies that most of the passengers were average-aged adults for the time. Combined with the information about relatives aboard, most passengers seemed to have been young or middle aged adults traveling by themselves.
+
+### Five Bivariate Plots
+
+```{r, echo=FALSE}
+
+#making a function to generate grouped barplots with arguments being the variable, fill color, axis labels, and title
+grouped_barplot <- function(myvar, survival, xaxis, yaxis, mytitle){
+  myplot = ggplot(titanic_new, aes(x = myvar, fill = survival))+ 
+  geom_bar(position = "dodge")+
+  scale_fill_manual(values = c("#528AAE","#BCD2E8"))+
+  xlab(xaxis)+
+  ylab(yaxis)+
+  ggtitle(mytitle)+
+  theme_minimal()
+return(myplot)
+}
+
+```
+
+
+```{r, echo=FALSE, out.width="70%"}
+
+grouped_barplot(myvar=titanic_new$Sex, survival = titanic_new$Survived, xaxis = "Sex of Passenger", yaxis = "Number of Passengers", mytitle = "Distribution of Males and Females Aboard Basd on Survival")
+
+mytab6 = table(titanic_new$Sex, titanic_new$Survived)
+
+```
+
+Of female passengers aboard, 75.29% survived whereas only 20.53% of male passengers aboard survived. This graph displays a strong correlation between survival and sex, with females having a much higher chance of surviving. The causes of this unknown - it could be because some females were given priority as mothers or due to "lady's first" social norms. 
+
+```{r, echo=FALSE, out.width="70%"}
+
+grouped_barplot(myvar=titanic_new$Pclass, survival = titanic_new$Survived, xaxis = "Ticket Class", yaxis = "Number of Passengers", mytitle = "Distribution of Ticket Class by Survival")
+
+mytab7 = table(titanic_new$Pclass, titanic_new$Survived)
+
+```
+
+This graphs that shows roughly 65.22% of first class passengers survived, 47.98% of second class passengers survived, and 23.94% of third class passengers survived. 
+
+This displays a strong association between ticket class and chances of survival, with first class passengers being most likely to survive. This makes sense because first class passengers were probably given priority since they paid the most.
+
+```{r, echo=FALSE, out.width="70%"}
+
+xLabels = paste(c("Infant", "Child", "Teen", "Adult", "Senior"))
+
+grouped_barplot(myvar=titanic_new$AgeCategory, survival = titanic_new$Survived, xaxis = "Age Classification", yaxis = "Number of Passengers", mytitle = "Distribution of Age Classification by Survival")+
+scale_x_continuous(breaks = c(1,2,3,4,5),labels=xLabels)
+
+mytab8 = table(titanic_new$AgeCategory, titanic_new$Survived)
+
+```
+
+This graph shows that 100% of infants survived, 53.23% of children survived, 47.73% of teens survived, 38.44% of adults survived, and 9.10% of seniors survived. This displays a strong association between age classification and survival, since infants and children were significantly more likely to survive than seniors. 
+
+The cause of this is unknown—it could be because infants and children went with their mothers (and females had higher survival), or because more infants and children rode in first class. 
+
+```{r, echo=FALSE, out.width="70%"}
+
+ggplot(titanic_new, 
+       aes(x = Survived, 
+           y = Age)) +
+  geom_boxplot(fill="#BCD2E8") +
+  labs(title = "Age Distribution Based on Survival")
+
+```
+
+This graphs shows that the average age of those who survived versus didn't survive was around the same, however, the first and third quartiles of ages of survivors were less than those of non-survivors. This makes sense, since infants, children, and teens were more likely to survive. 
+
+```{r, echo=FALSE, out.width="70%"}
+
+ggplot(titanic_new, 
+       aes(x = Survived, 
+           y = logFare)) +
+  geom_boxplot(fill="#BCD2E8") +
+  labs(title = "Passenger Fare Distribution Based on Survival")
+
+```
+
+This graph shows that the passengers that survived paid, on average, a higher fare than those who didn't, as displayed by a greater mean, first quartile, and third quartile. This makes sense since passengers that paid more probably had a higher ticket class (1st or 2nd), and passengers in a higher ticket class were more likely to survive. 
+
+### Debugging Experience
+
+I mainly ran into bugs when cleaning my data. When trying to remove rows with missing values for Port of Embarkation, I used the filter function to only include rows with the names of the three ports, "Southhampton," "Queenstown," and Cherbourg." Whenever I would run my block of "cleaning" code, my data would disappear, and when I opened it there were no rows or columns!
+
+To debug, I broke down the code into little chunks and ran it line by line, viewing the data each time afterwards to see if it was still there. Eventually, I realized that I hadn't yet re-coded the initials for Port of Embarkation to be the port names. The variable's values were still listed as "Q," "S," and "C," and thus, no rows were displayed because non contained those values. 
+
+To address this issue, I rearranged the order of my code so that I re-coded the names of the Port values before using the filter function to create an NA-free subset of my data, and it worked!
+
+### References
+
+1.Kabacoff, R. (2020, December 1). Data Visualization with R. https://rkabacoff.github.io/datavis/
+
+2.Kaggle. (n.d.). Titanic—Machine Learning from Disaster. Retrieved November 18, 2022, from https://kaggle.com/competitions/titanic
+
+3.Robbins, N. (2012, January 19). When Should I Use Logarithmic Scales in My Charts and Graphs? Forbes. https://www.forbes.com/sites/naomirobbins/2012/01/19/when-should-i-use-logarithmic-scales-in-my-charts-and-graphs/
+
+
