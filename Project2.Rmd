@@ -23,6 +23,10 @@ titanic = as_tibble(read.csv("titanic.csv"))
 
 ```
 
+### Github Repository Link
+
+Link: (https://github.com/chloe-beaudreau/project2.git)
+
 ### Data Obtainment
 
 For this project, I used a Titanic dataset that contains data about the passengers on the Titanic, such as gender and class, as well as their survival status. To obtain the data, I went to Kaggle and read the dataset description & overview before downloading the "train" csv file. To read in my data, I simply used the command read.csv, but I also converted it into a tibble  to make it easier to work with. 
@@ -35,7 +39,8 @@ When it came to processing my data, I checked for NA values and removed the few 
 
 After I had created my three new variables and removed missing values, I made a subset of my data called "titanic_new" where I selected only the variables I was interested in working with for the project. 
 
-Later on when making my graphs, a challenge I faced was using categorical variables that were encoded with numeric values. This made it more difficult for me since I would have to manually enter in the new x axis labels I wanted. To address this problem, I went back to processing my data and used "mutate," "case_when," and "recode_factor" to rename values in the Survived, Pclass, and Embarked variables to make them more descriptive. For example, now rather than 0s and 1s, I had "yes" or "no" as the values for the Survived variable, which made my graph more descriptive without me having to manually change the labels. 
+Later on when making my graphs, a challenge I faced was using categorical variables that were encoded with numeric values. This made it more difficult for me since I would have to manually enter in the new x axis labels I wanted. To address this problem, I went back to processing my data and renamed values in the Survived, Pclass, and Embarked variables to make them more descriptive. For example, now rather than 0s and 1s, I had "yes" or "no" as the values for the Survived variable, which made my graph more descriptive without me having to manually change the labels.
+
 ### Purpose
 I picked the Titanic data set because I've always been interested in the Titanic shipwreck. Whenever I watched the movie, I would wonder how they chose which people would get a lifeboat. Which factors were most important? Would I have survived? When I found this data set on Kaggle, it immediately peaked my interest. 
 
@@ -54,7 +59,7 @@ titanic$Embarked = recode_factor(titanic$Embarked, Q = "Queenstown", S = "Southa
 
 In order to create a new variable named "AgeCategory," I used a for loop to run through the age of every passenger and assign a classification by running the get_age_category function. 
 
-I embedded if and else if statements within this get_age_category function to assign a category based on the range the age fell into. For example, if age was less than 1, the classification assigned would be "1," which I later re coded to be "infant." I created ranges and corresponding categories for child, teen, adult, and seniors as well. 
+I embedded if and else if statements within this get_age_category function to assign a category based on the range the age fell into. For example, if age was less than 1, the classification assigned would be "1," which I later re-coded to be "infant." I created ranges and corresponding categories for child, teen, adult, and seniors as well. 
 
 ```{r, echo=FALSE}
 
@@ -105,7 +110,7 @@ for(i in 1:nrow(titanic)) {
 titanic = filter(titanic, Embarked == "Southampton" | Embarked == "Queenstown" | Embarked == "Cherbourg")
 
 #Now filtering age - continuing to clean
-titanic_new = filters
+titanic_new = filter(titanic, Age != '', Survived != '',)
 
 #sub-setting data to include only variables I want
 titanic_new = select(titanic_new, Survived, Pclass, Sex, Age, Relatives, Fare, Embarked, AgeCategory, logFare)
@@ -153,11 +158,11 @@ mytribble2 %>%
 
 ### Two Functions Used
 
-I created a function to generate univariate barplots for the following variables: sex, ticket class, port of embarkation, relatives. I included arguments such as the variable, the fill color, the x and y axes, as well as the title. 
+I created a function to generate univariate barplots for the following variables: sex, ticket class, port of embarkation, and relatives. I included arguments such as the variable, the fill color, the x and y axes, as well as the title. 
 
 I also created a function to generate bivariate graphs (grouped barplots) for the following variables: sex, ticket class, and age category, all of which I grouped based on survival. The arguments I included were the same as they were for the first function. 
 
-Overall, using functions helped me speed up the process of creating graphs since rather than writing code for the entire ggplot, I could instead just type the function and add the few features I wanted to change as arguments.
+Overall, using functions helped me speed up the process of creating graphs since rather than writing code for the entire ggplot, I could simply type the function and add the few features I wanted to change as arguments.
 
 ### Five Univariate Plots
 
@@ -330,9 +335,9 @@ This graph shows that the passengers that survived paid, on average, a higher fa
 
 ### Debugging Experience
 
-I mainly ran into bugs when cleaning my data. When trying to remove rows with missing values for Port of Embarkation, I used the filter function to only include rows with the names of the three ports, "Southhampton," "Queenstown," and Cherbourg." Whenever I would run my block of "cleaning" code, my data would disappear, and when I opened it there were no rows or columns!
+I mainly ran into bugs when cleaning my data. When trying to remove rows with missing values for Port of Embarkation, I used the filter function to only include rows with the names of the three ports, "Southhampton," "Queenstown," and "Cherbourg." Whenever I would run my block of "cleaning" code, my data would disappear, and when I opened it there were no rows or columns!
 
-To debug, I broke down the code into little chunks and ran it line by line, viewing the data each time afterwards to see if it was still there. Eventually, I realized that I hadn't yet re-coded the initials for Port of Embarkation to be the port names. The variable's values were still listed as "Q," "S," and "C," and thus, no rows were displayed because non contained those values. 
+To debug, I broke down the code into little chunks and ran it line by line, viewing the data each time afterwards to see if it was still there. Eventually, I realized that I hadn't yet re-coded the initials for Port of Embarkation to be the port names. The variable's values were still listed as "Q," "S," and "C," and thus, no rows were displayed because none contained the values I was using to filter the data with.  
 
 To address this issue, I rearranged the order of my code so that I re-coded the names of the Port values before using the filter function to create an NA-free subset of my data, and it worked!
 
